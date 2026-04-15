@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Comment Cleaner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 2rem;
+        }
+
+        .tab-button {
+            padding: 1rem 2rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .tab-button:hover {
+            color: #667eea;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .editor-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .editor-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        textarea {
+            flex: 1;
+            min-height: 400px;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            background-color: #f8f9fa;
+            color: #333;
+            resize: none;
+            transition: all 0.2s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea:read-only {
+            background-color: #f8f9fa;
+            color: #666;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-clean {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-clean:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-clean:active {
+            transform: translateY(0);
+        }
+
+        .btn-copy {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-copy:hover {
+            background-color: #e8e8e8;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .btn-clear {
+            background-color: transparent;
+            color: #999;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-clear:hover {
+            color: #d9534f;
+            border-color: #d9534f;
+            background-color: #fee;
+        }
+
+        .stats {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #666;
+            border-left: 4px solid #667eea;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: 14px;
+            font-weight: 600;
+            pointer-events: none;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .notification.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 768px) {
+            .editor-section {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .header {
+                padding: 2rem 1rem;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .content {
+                padding: 1rem;
+            }
+
+            .tabs {
+                gap: 0.5rem;
+            }
+
+            .tab-button {
+                padding: 0.75rem 1rem;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧹 Code Comment Cleaner</h1>
+            <p>Remove yap comments from your Python and Luau code</p>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="python">Python</button>
+                <button class="tab-button" data-tab="luau">Luau</button>
+            </div>
+
+            <!-- Python Tab -->
+            <div id="python" class="tab-content active">
+                <div class="editor-section">
+                    <div class="editor-panel">
+                        <label class="editor-label">📝 Input</label>
+                        <textarea id="pythonInput" placeholder="import os #yap this is a comment&#10;def hello(): #yap another comment&#10;    pass"></textarea>
+                        <div class="stats" id="pythonInputStats">Ready to clean</div>
+                        <div class="button-group">
+                            <button class="btn-clean" onclick="cleanPython()">Clean code</button>
+                            <button class="btn-clear" onclick="clearPython()">Clear</button>
+                        </div>
+                    </div>
+
+                    <div class="editor-panel">
+                        <label class="editor-label">✨ Output</label>
+                        <textarea id="pythonOutput" placeholder="Cleaned code will appear here" readonly></textarea>
+                        <div class="stats" id="pythonOutputStats">Waiting for input</div>
+                        <div class="button-group">
+                            <button class="btn-copy" onclick="copyPython()">Copy to clipboard</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Luau Tab -->
+            <div id="luau" class="tab-content">
+                <div class="editor-section">
+                    <div class="editor-panel">
+                        <label class="editor-label">📝 Input</label>
+                        <textarea id="luauInput" placeholder="local function test() --yap this is a comment&#10;    print(&quot;hello&quot;) --yap another comment&#10;end"></textarea>
+                        <div class="stats" id="luauInputStats">Ready to clean</div>
+                        <div class="button-group">
+                            <button class="btn-clean" onclick="cleanLuau()">Clean code</button>
+                            <button class="btn-clear" onclick="clearLuau()">Clear</button>
+                        </div>
+                    </div>
+
+                    <div class="editor-panel">
+                        <label class="editor-label">✨ Output</label>
+                        <textarea id="luauOutput" placeholder="Cleaned code will appear here" readonly></textarea>
+                        <div class="stats" id="luauOutputStats">Waiting for input</div>
+                        <div class="button-group">
+                            <button class="btn-copy" onclick="copyLuau()">Copy to clipboard</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.dataset.tab;
+                
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                button.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+            });
+        });
+
+        // Python cleaning function
+        function cleanPython() {
+            const input = document.getElementById('pythonInput').value;
+            if (!input.trim()) {
+                showNotification('Please enter some Python code first');
+                return;
+            }
+
+            const lines = input.split('\n');
+            const cleaned = lines.map(line => {
+                // Find and remove #yap comments (and everything after them)
+                const yapIndex = line.indexOf('#yap');
+                if (yapIndex !== -1) {
+                    // Remove everything from #yap onwards
+                    return line.substring(0, yapIndex).trimEnd();
+                }
+                return line;
+            }).filter((line, index, arr) => {
+                // Remove lines that become empty after cleaning
+                return line.trim() !== '' || (index === 0 || index === arr.length - 1);
+            }).join('\n');
+
+            const output = document.getElementById('pythonOutput');
+            output.value = cleaned;
+
+            // Update stats
+            const removedComments = (input.match(/#yap/g) || []).length;
+            document.getElementById('pythonInputStats').textContent = `Lines: ${lines.length} | #yap comments: ${removedComments}`;
+            document.getElementById('pythonOutputStats').textContent = `Lines: ${cleaned.split('\n').length} | Comments removed: ${removedComments}`;
+            
+            showNotification(`Cleaned! Removed ${removedComments} #yap comment(s)`);
+        }
+
+        // Luau cleaning function
+        function cleanLuau() {
+            const input = document.getElementById('luauInput').value;
+            if (!input.trim()) {
+                showNotification('Please enter some Luau code first');
+                return;
+            }
+
+            const lines = input.split('\n');
+            const cleaned = lines.map(line => {
+                // Find and remove --yap comments (and everything after them)
+                const yapIndex = line.indexOf('--yap');
+                if (yapIndex !== -1) {
+                    // Remove everything from --yap onwards
+                    return line.substring(0, yapIndex).trimEnd();
+                }
+                return line;
+            }).filter((line, index, arr) => {
+                // Remove lines that become empty after cleaning
+                return line.trim() !== '' || (index === 0 || index === arr.length - 1);
+            }).join('\n');
+
+            const output = document.getElementById('luauOutput');
+            output.value = cleaned;
+
+            // Update stats
+            const removedComments = (input.match(/--yap/g) || []).length;
+            document.getElementById('luauInputStats').textContent = `Lines: ${lines.length} | --yap comments: ${removedComments}`;
+            document.getElementById('luauOutputStats').textContent = `Lines: ${cleaned.split('\n').length} | Comments removed: ${removedComments}`;
+            
+            showNotification(`Cleaned! Removed ${removedComments} --yap comment(s)`);
+        }
+
+        // Copy functions
+        function copyPython() {
+            const output = document.getElementById('pythonOutput');
+            if (!output.value) {
+                showNotification('Nothing to copy yet');
+                return;
+            }
+            navigator.clipboard.writeText(output.value);
+            showNotification('Copied to clipboard!');
+        }
+
+        function copyLuau() {
+            const output = document.getElementById('luauOutput');
+            if (!output.value) {
+                showNotification('Nothing to copy yet');
+                return;
+            }
+            navigator.clipboard.writeText(output.value);
+            showNotification('Copied to clipboard!');
+        }
+
+        // Clear functions
+        function clearPython() {
+            document.getElementById('pythonInput').value = '';
+            document.getElementById('pythonOutput').value = '';
+            document.getElementById('pythonInputStats').textContent = 'Ready to clean';
+            document.getElementById('pythonOutputStats').textContent = 'Waiting for input';
+        }
+
+        function clearLuau() {
+            document.getElementById('luauInput').value = '';
+            document.getElementById('luauOutput').value = '';
+            document.getElementById('luauInputStats').textContent = 'Ready to clean';
+            document.getElementById('luauOutputStats').textContent = 'Waiting for input';
+        }
+
+        // Notification system
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
