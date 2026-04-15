@@ -264,7 +264,7 @@
     <div class="container">
         <div class="header">
             <h1>🧹 Code Comment Cleaner</h1>
-            <p>Remove yap comments from your Python and Luau code</p>
+            <p>Remove all comment lines and trailing yaps from Python and Luau</p>
         </div>
 
         <div class="content">
@@ -273,12 +273,11 @@
                 <button class="tab-button" data-tab="luau">Luau</button>
             </div>
 
-            <!-- Python Tab -->
             <div id="python" class="tab-content active">
                 <div class="editor-section">
                     <div class="editor-panel">
                         <label class="editor-label">📝 Input</label>
-                        <textarea id="pythonInput" placeholder="import os #yap this is a comment&#10;def hello(): #yap another comment&#10;    pass"></textarea>
+                        <textarea id="pythonInput" placeholder="# This whole line goes&#10;import os # This part goes&#10;def hello():&#10;    # Even indented comments go&#10;    pass"></textarea>
                         <div class="stats" id="pythonInputStats">Ready to clean</div>
                         <div class="button-group">
                             <button class="btn-clean" onclick="cleanPython()">Clean code</button>
@@ -297,12 +296,11 @@
                 </div>
             </div>
 
-            <!-- Luau Tab -->
             <div id="luau" class="tab-content">
                 <div class="editor-section">
                     <div class="editor-panel">
                         <label class="editor-label">📝 Input</label>
-                        <textarea id="luauInput" placeholder="local function test() --yap this is a comment&#10;    print(&quot;hello&quot;) --yap another comment&#10;end"></textarea>
+                        <textarea id="luauInput" placeholder="-- This whole line goes&#10;local x = 10 -- This part goes&#10;function test()&#10;    -- Indented comments also go&#10;    print('hi')&#10;end"></textarea>
                         <div class="stats" id="luauInputStats">Ready to clean</div>
                         <div class="button-group">
                             <button class="btn-clean" onclick="cleanLuau()">Clean code</button>
@@ -330,16 +328,37 @@
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 const tabName = button.dataset.tab;
-                
                 document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
                 button.classList.add('active');
                 document.getElementById(tabName).classList.add('active');
             });
         });
 
-        // Python cleaning function
+        function processCode(input, commentSymbol) {
+            const lines = input.split('\n');
+            let removedCount = 0;
+
+            const cleaned = lines.filter(line => {
+                // Check if the line is JUST a comment (ignoring whitespace)
+                if (line.trim().startsWith(commentSymbol)) {
+                    removedCount++;
+                    return false;
+                }
+                return true;
+            }).map(line => {
+                // For lines with code + comments, remove the comment part
+                const symbolIndex = line.indexOf(commentSymbol);
+                if (symbolIndex !== -1) {
+                    removedCount++;
+                    return line.substring(0, symbolIndex).trimEnd();
+                }
+                return line;
+            }).join('\n');
+
+            return { cleaned, removedCount };
+        }
+
         function cleanPython() {
             const input = document.getElementById('pythonInput').value;
             if (!input.trim()) {
@@ -347,32 +366,16 @@
                 return;
             }
 
-            const lines = input.split('\n');
-            const cleaned = lines.map(line => {
-                // Find and remove #yap comments (and everything after them)
-                const yapIndex = line.indexOf('#yap');
-                if (yapIndex !== -1) {
-                    // Remove everything from #yap onwards
-                    return line.substring(0, yapIndex).trimEnd();
-                }
-                return line;
-            }).filter((line, index, arr) => {
-                // Remove lines that become empty after cleaning
-                return line.trim() !== '' || (index === 0 || index === arr.length - 1);
-            }).join('\n');
-
+            const { cleaned, removedCount } = processCode(input, '#');
             const output = document.getElementById('pythonOutput');
             output.value = cleaned;
 
-            // Update stats
-            const removedComments = (input.match(/#yap/g) || []).length;
-            document.getElementById('pythonInputStats').textContent = `Lines: ${lines.length} | #yap comments: ${removedComments}`;
-            document.getElementById('pythonOutputStats').textContent = `Lines: ${cleaned.split('\n').length} | Comments removed: ${removedComments}`;
+            document.getElementById('pythonInputStats').textContent = `Initial Lines: ${input.split('\n').length}`;
+            document.getElementById('pythonOutputStats').textContent = `Cleaned Lines: ${cleaned.split('\n').length} | Removed/Cleaned: ${removedCount}`;
             
-            showNotification(`Cleaned! Removed ${removedComments} #yap comment(s)`);
+            showNotification(`Cleaned! Processed ${removedCount} comment(s)`);
         }
 
-        // Luau cleaning function
         function cleanLuau() {
             const input = document.getElementById('luauInput').value;
             if (!input.trim()) {
@@ -380,53 +383,30 @@
                 return;
             }
 
-            const lines = input.split('\n');
-            const cleaned = lines.map(line => {
-                // Find and remove --yap comments (and everything after them)
-                const yapIndex = line.indexOf('--yap');
-                if (yapIndex !== -1) {
-                    // Remove everything from --yap onwards
-                    return line.substring(0, yapIndex).trimEnd();
-                }
-                return line;
-            }).filter((line, index, arr) => {
-                // Remove lines that become empty after cleaning
-                return line.trim() !== '' || (index === 0 || index === arr.length - 1);
-            }).join('\n');
-
+            const { cleaned, removedCount } = processCode(input, '--');
             const output = document.getElementById('luauOutput');
             output.value = cleaned;
 
-            // Update stats
-            const removedComments = (input.match(/--yap/g) || []).length;
-            document.getElementById('luauInputStats').textContent = `Lines: ${lines.length} | --yap comments: ${removedComments}`;
-            document.getElementById('luauOutputStats').textContent = `Lines: ${cleaned.split('\n').length} | Comments removed: ${removedComments}`;
+            document.getElementById('luauInputStats').textContent = `Initial Lines: ${input.split('\n').length}`;
+            document.getElementById('luauOutputStats').textContent = `Cleaned Lines: ${cleaned.split('\n').length} | Removed/Cleaned: ${removedCount}`;
             
-            showNotification(`Cleaned! Removed ${removedComments} --yap comment(s)`);
+            showNotification(`Cleaned! Processed ${removedCount} comment(s)`);
         }
 
-        // Copy functions
         function copyPython() {
             const output = document.getElementById('pythonOutput');
-            if (!output.value) {
-                showNotification('Nothing to copy yet');
-                return;
-            }
+            if (!output.value) { showNotification('Nothing to copy yet'); return; }
             navigator.clipboard.writeText(output.value);
             showNotification('Copied to clipboard!');
         }
 
         function copyLuau() {
             const output = document.getElementById('luauOutput');
-            if (!output.value) {
-                showNotification('Nothing to copy yet');
-                return;
-            }
+            if (!output.value) { showNotification('Nothing to copy yet'); return; }
             navigator.clipboard.writeText(output.value);
             showNotification('Copied to clipboard!');
         }
 
-        // Clear functions
         function clearPython() {
             document.getElementById('pythonInput').value = '';
             document.getElementById('pythonOutput').value = '';
@@ -441,7 +421,6 @@
             document.getElementById('luauOutputStats').textContent = 'Waiting for input';
         }
 
-        // Notification system
         function showNotification(message) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
